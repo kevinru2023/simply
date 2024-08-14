@@ -170,6 +170,7 @@ Project Link: [https://github.com/kevinru2023/simply-](https://github.com/kevinr
 * [Shadcn/ui](https://ui.shadcn.com/)
 * [SocketIO](https://socket.io/)
 * [Mongoose](https://mongoosejs.com/docs/index.html)
+* [README template](https://github.com/othneildrew/Best-README-Template)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
