@@ -1,0 +1,40 @@
+#root {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* This can help to prevent unwanted scrollbars */
+}
+
+@keyframes slide-and-fade-in {
+  0% {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1.0;
+  }
+}
+
+.animate-slide-and-fade-in {
+  animation: 1.5s ease 0s slide-and-fade-in;
+  animation-fill-mode: forwards;
+}
+.bg-100 {
+  background-size: 100% auto;
+}
+.card {
+  padding: 2em;
+}
+
+.textarea-container {
+  /* For Chrome, Safari and Opera */
+  ::-webkit-scrollbar {
+    width: 6px; /* Change this value to make the scrollbar wider or narrower */
+  }
+
+  .textarea-with-button {
+    padding-right: 60px; /* adjust this value based on the width of your button */
+  }
+}
