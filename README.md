@@ -157,7 +157,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Kevin Rubio - ([Linkedin](https://www.linkedin.com/in/kevin-rubio-851269236/)) - kevinru2005@gmail.com
 
-Project Link: [https://github.com/kevinru2023/simply-](https://github.com/kevinru2023/simply-)
+Project Link: [https://github.com/kevinru2023/simply](https://github.com/kevinru2023/simply)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
