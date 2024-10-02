@@ -88,16 +88,17 @@ export function JoinForm({ onQuit }: FormCardProps) {
       roomPass: roomPass !== null ? roomPass.toString() : "",
     }).toString();
 
-    fetch(`http://localhost:3000/joinroom?${queryParams}`).then((res) =>{
-      if(!res.ok){
+    fetch(`http://localhost:3000/joinroom?${queryParams}`).then((res) => {
+      if (!res.ok) {
         res.text().then((text) => {
           console.log(text); // Log the response text
         });
-      }else{
-        socket.emit("joinRoom", roomName); 
-        navigate('/room'); 
-        sessionStorage.setItem('userName', displayName); 
-        sessionStorage.setItem('roomName', roomName); 
+      } else {
+        socket.emit("joinRoom", roomName);
+        navigate('/room');
+        sessionStorage.setItem('roomPass', roomPass.toString()); //although the type can be null, it wont never be null due to the backend getting called first
+        sessionStorage.setItem('userName', displayName);
+        sessionStorage.setItem('roomName', roomName);
       }
     })
   };
@@ -138,7 +139,7 @@ export function JoinForm({ onQuit }: FormCardProps) {
             Cancel
           </Button>
           <Button className="bg-customBlueButton hover:bg-customBlueButtonHover text-lg shadow-lg px-6 py-2"
-          onClick={handleJoin}
+            onClick={handleJoin}
           >
             Join Room
           </Button>
@@ -151,27 +152,31 @@ export function JoinForm({ onQuit }: FormCardProps) {
 export function HostForm({ onQuit }: FormCardProps) {
   const [displayName, setdisplayName] = useState<string>("");
   const [roomName, setroomName] = useState<string>("");
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
-  const hostRoom = () => { 
+  const hostRoom = () => {
     const qParams = new URLSearchParams({
-      displayName: displayName, 
-      roomName: roomName 
-    }).toString(); 
+      displayName: displayName,
+      roomName: roomName
+    }).toString();
 
     fetch(`http://localhost:3000/createroom?${qParams}`).then((res) => { //this could probably get refactored at some point
-      if(!res.ok){
+      if (!res.ok) {
         res.text().then((text) => {
-          console.log(text); 
+          console.log(text);
         })
-      }else{
-        socket.emit("joinRoom", roomName); 
-        navigate('/room'); 
-        sessionStorage.setItem('userName', displayName); 
-        sessionStorage.setItem('roomName', roomName); 
+      } else {
+        res.json().then((data) => {
+          sessionStorage.setItem('roomPass', data.roomPass); //such a bad way to due this but idc
+          sessionStorage.setItem('roomName', data.roomName);
+        });
+        socket.emit("joinRoom", roomName);
+        navigate('/room');
+        sessionStorage.setItem('userName', displayName);
+        sessionStorage.setItem('roomName', roomName);
       }
     })
-  }; 
+  };
 
   return (
     <div className="flex-auto flex justify-center items-center animate-slide-and-fade-in absolute inset-0 p-4">

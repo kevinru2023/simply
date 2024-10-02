@@ -15,68 +15,63 @@ import {
 } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
+
 type Message = {
   userName: string;
   message: string;
   timeStamp: Date;
 };
 
-export default function SideBar() {
-  const [msg, setMsg] = useState<string>("");
-  const [messages, setMessages] = useState<Array<Message>>([]);
-  const username: string = sessionStorage.getItem("userName")!;
-  const roomname: string = sessionStorage.getItem("roomName")!;
-  
-  //for avatar generation 
-  const getAvatarName = (username: string) => {
-    const usernamearr: Array<string> = username.trim().split(" "); 
-    const first: string = usernamearr[0];
-    
-    if(usernamearr.length > 1){
-      const second: string = usernamearr[1];
-      return '${first}+${second}';
-    }
-    return '${first}'; 
-  }
+//props are weird man 
+const TextBubble = ({ messages }: { messages: Message[] }) => {
+  const getAvatarUrl = (avatar_username: string) => `https://ui-avatars.com/api/?name=${avatar_username}&background=random`;
 
-  const textbubble = ({ messages }: { messages: Array<Message> }) => (
+  return (
     <>
-      {messages.map((message, i) => (
-        <li className="flex flex-row gap-6"key={i}>
-          {/* <strong>{message.userName}</strong>: {message.message}{" "} */}
+      {messages.map((message, index) => (
+        <li className="flex flex-row gap-6 pb-2" key={index}>
           <Avatar>
-            <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(getAvatarName(message.userName))}`}></AvatarImage>
+            <AvatarImage src={getAvatarUrl(message.userName)}></AvatarImage>
           </Avatar>
-          <Card className="grow-0 basis-1/2 bg-customChatBubbleBack border-customChatBubbleBack">
+          <Card className="grow-0 basis-7/12 bg-customChatBubbleBack border-customChatBubbleBack">
             <CardHeader className="pb-0 pt-1">
               <CardDescription>{message.userName}</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 pb-1 text-white">
               <p>{message.message}</p>
-          </CardContent>
-         </Card>
-          <em>{new Date(message.timeStamp).toLocaleTimeString()}</em>
+            </CardContent>
+          </Card>
+          <em className="text-gray-500 text-xs">{new Date(message.timeStamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</em>
         </li>
       ))}
     </>
   );
+};
+
+
+
+export default function SideBar() {
+  const [msg, setMsg] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]); //this should be useEffect or otherwise we get constant rerender 
+  const username: string = sessionStorage.getItem("userName")!;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (msg) {
-      socket.emit("chat message", roomname, username, msg);
+      socket.emit("chat message", username, msg);
       setMsg("");
     }
   };
 
   useEffect(() => {
+    //pushes messages to an array for mapping 
     const handleMessage = (data: Message) => {
       setMessages((prevMessages) => [...prevMessages, data]);
     };
 
     socket.on("chat message", handleMessage);
 
-    //turn off the socket after the msg is sent??? i guess?
+    //event listener cleanup 
     return () => {
       socket.off("chat message", handleMessage);
     };
@@ -87,10 +82,11 @@ export default function SideBar() {
       <Accordion className="pb-2" type="single" collapsible>
         <AccordionItem value="item-1">
           <AccordionTrigger>Chat</AccordionTrigger>
-          <AccordionContent>
-            <ScrollArea  className="bg-customChatBack h-96 w-96">
+          <AccordionContent className="pb-1">
+            <h1>Pin: {sessionStorage.getItem('roomPass')}</h1>
+            <ScrollArea className="bg-customChatBack h-96 w-96">
               <div className="w-96 inline-block text-wrap break-words">
-                <ul>{textbubble({ messages })}</ul>
+                <ul>{TextBubble({ messages })}</ul>
               </div>
             </ScrollArea>
           </AccordionContent>

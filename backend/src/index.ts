@@ -9,23 +9,18 @@ import cors from "cors";
 dotenv.config();
 
 // Schemas for DB, defining the structure of stored data
-const connectionSchema = new Schema({
-  peerId: String,
-  displayName: String,
-  joinedAt: Date,
-});
 
 const messageSchema = new Schema({
-  userName: String, 
-  message: String,  
-  timeStamp: Date, 
+  userName: String,
+  message: String,
+  timeStamp: Date,
 })
 
 const roomSchema = new Schema({
   roomName: String,
   roomPass: Number,
-  connections: [connectionSchema],
-  messages: [messageSchema], 
+  connections: [String], //this will be a list of peer ids
+  messages: [messageSchema],
   users: [String],
   createdAt: Date,
 });
@@ -37,7 +32,7 @@ const port: number = parseInt(process.env.PORT as string, 10) || 3000;
 
 // Socket.IO server for real-time communication
 const io = new Server(http, {
-  connectionStateRecovery: {}, 
+  connectionStateRecovery: {},
   cors: {
     origin: process.env.FRONTEND_ORIGIN as string,
     methods: ["GET", "POST"],
@@ -53,7 +48,6 @@ const peerServer = PeerServer({
 });
 
 const SimplyRoom = model("Room", roomSchema);
-const User = model("User", connectionSchema);
 
 app.use(
   cors({
@@ -100,7 +94,7 @@ app.get("/createroom", async (req: Request, res: Response) => {
       roomName: rname,
       roomPass: rpass,
       connections: [],
-      messages:[], 
+      messages: [],
       users: [uname],
       createdAt: new Date(),
     });
@@ -108,7 +102,7 @@ app.get("/createroom", async (req: Request, res: Response) => {
     await newRoom.save();
     return res
       .status(201)
-      .json({ success: true, message: "Room created", roomId: newRoom._id });
+      .json({ success: true, message: "Room created", roomName: rname, roomPass: rpass });
   }
 });
 
@@ -153,36 +147,43 @@ app.get("/joinroom", async (req: Request, res: Response) => {
   });
 });
 
-//io can be thought of as starting the 'server', whilst any socket.on can be thought of as making a get request
+//io can be thought of as starting the 'server', whilst anyocket.on can be thought of as making a get request
 //i found this analogy really useful when first starting out
 
 //also this only gets called after joinroom hence no need for validation 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
-
   // Listen for the client emitting 'joinRoom' event after successful room join
-  socket.on("joinRoom", (roomName: string) => {
+  socket.on("joinRoom", async (roomName: string) => {
     socket.join(roomName);
+
+    const room = await SimplyRoom.findOne({ roomName: roomName });
+
+    const updateRoom = async (update: any) => {
+      SimplyRoom.findOneAndUpdate({ roomName }, update, { new: true });
+    }; //function to make db operations easier  
 
     io.to(roomName).emit("userJoined", socket.id); // Notify room members
 
-    socket.on("chat message", async (roomName: string, userName: string, msg: string) => {
-      const tstamp: Date = new Date(); 
+    socket.on("peerJoin", async (peerId: String) => {
+      await updateRoom({ $push: { connections: peerId } });
+      io.to(roomName).emit('peerJoin', peerId);
+    });
+
+    socket.on("chat message", async (userName: string, msg: string) => {
+      const tstamp: Date = new Date();
 
       const msgObj = { //note order of this matters because it will be interperted by mongoose db
-        userName: userName, 
+        userName: userName,
         message: msg,
         timeStamp: tstamp,
-      }; 
-
-      const room = await SimplyRoom.findOneAndUpdate(
-        { roomName },
-        { $push: { messages: msgObj } },
-        { new: true }
-      );
-      
-      io.to(roomName).emit("chat message", msgObj); // Broadcast message to room
+      };
+      await updateRoom({ $push: { messages: msgObj } });
+      io.to(roomName).emit("chat message", msgObj); // Broadcast message to room 
     });
+
+    socket.emit("existingPeers", room!.connections);
+
   });
 
   socket.on("disconnect", () => {
